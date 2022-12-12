@@ -54,7 +54,7 @@ const columns = [
   }),
 ];
 
-const Table = styled.table(props => ({
+const TableWrapper = styled.table(props => ({
   width: '100%',
   borderStyle: 'hidden',
   borderCollapse: 'collapse',
@@ -212,7 +212,7 @@ interface Props {
   entityNames: EntityNames;
 }
 
-export const TripleTable = memo(function TripleTable({ update, triples, entityNames, space }: Props) {
+export const Table = memo(function Table({ update, triples, entityNames, space }: Props) {
   const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({});
   const { editable } = useEditable();
 
@@ -255,7 +255,7 @@ export const TripleTable = memo(function TripleTable({ update, triples, entityNa
 
   return (
     <Container>
-      <Table cellSpacing={0} cellPadding={0}>
+      <TableWrapper cellSpacing={0} cellPadding={0}>
         <thead>
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
@@ -301,7 +301,7 @@ export const TripleTable = memo(function TripleTable({ update, triples, entityNa
             </TableRow>
           ))}
         </tbody>
-      </Table>
+      </TableWrapper>
     </Container>
   );
 });

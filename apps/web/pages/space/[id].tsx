@@ -2,13 +2,13 @@ import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { Triples } from '~/modules/components/triples';
 import { SYSTEM_IDS } from '~/modules/constants';
+import * as params from '~/modules/params';
 import { getConfigFromUrl } from '~/modules/params';
 import { Network } from '~/modules/services/network';
 import { StorageClient } from '~/modules/services/storage';
+import { DEFAULT_PAGE_SIZE } from '~/modules/state/triple-store';
 import { TripleStoreProvider } from '~/modules/state/triple-store-provider';
 import { EntityNames, Triple } from '~/modules/types';
-import * as params from '~/modules/params';
-import { DEFAULT_PAGE_SIZE } from '~/modules/state/triple-store';
 
 interface Props {
   spaceId: string;
