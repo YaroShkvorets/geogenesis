@@ -5,7 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import pluralize from 'pluralize';
 import { useEffect, useState } from 'react';
-import { Table } from '~/modules/components/table';
+import { createColumns, Table } from '~/modules/components/table';
 import { SmallButton } from '~/modules/design-system/button';
 import { Chip } from '~/modules/design-system/chip';
 import { ChevronDownSmall } from '~/modules/design-system/icons/chevron-down-small';
@@ -69,11 +69,29 @@ const CopyText = styled(Text)`
 
 const MotionCopyText = motion(CopyText);
 
-export default function EntityPage({ triples, id, name, space, entityNames, linkedEntities }: Props) {
+export default function EntityPage({
+  triples,
+  id,
+  name,
+  space,
+  entityNames,
+  linkedEntities,
+  relatedEntities,
+  columns,
+}: Props) {
   const { setPageName } = usePageName();
   const [copyText, setCopyText] = useState<'Copy ID' | 'Entity ID Copied'>('Copy ID');
 
-  console.log({ triples, id, name, space, entityNames, linkedEntities });
+  console.log({ triples, id, name, space, entityNames, linkedEntities, relatedEntities, columns });
+
+  console.log(createColumns(columns));
+
+  const columnData = Object.values(linkedEntities)
+    .map(e => e.triples)
+    .flat();
+
+  console.log(columnData);
+  // const columns = Object.values(linkedEntities)[0].map
 
   useEffect(() => {
     if (name !== id) setPageName(name);
@@ -165,11 +183,7 @@ export default function EntityPage({ triples, id, name, space, entityNames, link
         Linked by
       </Text>
 
-      <Table
-        triples={Object.values(linkedEntities)
-          .map(e => e.triples)
-          .flat()}
-      />
+      <Table columns={createColumns(columns)} triples={columnData} />
 
       <Entities>
         {Object.entries(linkedEntities).length === 0 ? (
@@ -481,17 +495,31 @@ export const getServerSideProps: GetServerSideProps<Props> = async context => {
     return { ...acc, ...entityNames };
   }, {} as EntityNames);
 
+  const entityNames = {
+    ...entity.entityNames,
+    ...related.entityNames,
+    ...relatedEntityAttributeNames,
+  };
+  const relatedTriples = relatedEntities.flatMap(entity => entity.triples);
+
+  const columnsMap = relatedTriples.reduce((acc, triple) => {
+    if (!acc[triple.attributeId])
+      acc[triple.attributeId] = {
+        accessor: triple.attributeId,
+        label: entityNames[triple.attributeId] || '',
+      };
+    return acc;
+  }, {} as Record<string, { accessor: string; label: string }>);
+
   return {
     props: {
       triples: entity.triples,
       id: entityId,
+      columns: Object.values(columnsMap),
       name: getEntityName(entity.triples) ?? entityId,
       space,
-      entityNames: {
-        ...entity.entityNames,
-        ...related.entityNames,
-        ...relatedEntityAttributeNames,
-      },
+      relatedEntities,
+      entityNames,
       linkedEntities,
       key: entityId,
     },

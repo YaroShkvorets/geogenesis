@@ -36,7 +36,21 @@ const columnHelper = createColumnHelper<Triple>();
 // Table width, minus cell borders
 const COLUMN_SIZE = 1200 / 3;
 
-const columns = [
+export interface Column {
+  accessor: string;
+  label: string;
+}
+export const createColumns = (columns: Column[]) => {
+  return columns.map(column => {
+    return columnHelper.accessor(row => row[column.accessor], {
+      id: column.accessor,
+      header: () => <Text variant="smallTitle">{column.label}</Text>,
+      size: COLUMN_SIZE,
+    });
+  });
+};
+
+export const tripleColumns = [
   columnHelper.accessor(row => row.entityId, {
     id: 'entityId',
     header: () => <Text variant="smallTitle">Entity</Text>,
@@ -212,7 +226,7 @@ interface Props {
   entityNames: EntityNames;
 }
 
-export const Table = memo(function Table({ update, triples, entityNames, space }: Props) {
+export const Table = memo(function Table({ update, triples, entityNames, space, columns }: Props) {
   const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({});
   const { editable } = useEditable();
 

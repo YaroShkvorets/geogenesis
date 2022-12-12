@@ -19,7 +19,7 @@ import { EntityNames, Triple, Value } from '../types';
 import { getFilesFromFileList } from '../utils';
 import { PREDEFINED_QUERIES } from './data/predefined-queries';
 import { PredefinedQueriesContainer } from './predefined-queries/container';
-import { Table } from './table';
+import { Table, tripleColumns } from './table';
 import { TripleInput } from './triple-input';
 
 const TableHeader = styled.div({
@@ -161,6 +161,7 @@ export function Triples({
         <Spacer height={12} />
 
         <Table
+          columns={tripleColumns}
           space={spaceId}
           triples={tripleStore.triples.length === 0 ? initialTriples : tripleStore.triples}
           entityNames={Object.keys(tripleStore.entityNames).length === 0 ? initialEntityNames : tripleStore.entityNames}
