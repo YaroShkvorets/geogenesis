@@ -1,6 +1,7 @@
 import styled from '@emotion/styled';
-import { LayoutGroup, motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { GetServerSideProps } from 'next';
+import Head from 'next/head';
 import Link from 'next/link';
 import pluralize from 'pluralize';
 import { useEffect, useState } from 'react';
@@ -8,19 +9,17 @@ import { SmallButton } from '~/modules/design-system/button';
 import { Chip } from '~/modules/design-system/chip';
 import { ChevronDownSmall } from '~/modules/design-system/icons/chevron-down-small';
 import { RightArrowDiagonal } from '~/modules/design-system/icons/right-arrow-diagonal';
+import { Tick } from '~/modules/design-system/icons/tick';
+import { ResizableContainer } from '~/modules/design-system/resizable-container';
 import { Spacer } from '~/modules/design-system/spacer';
 import { Text } from '~/modules/design-system/text';
+import { Truncate } from '~/modules/design-system/truncate';
 import { getConfigFromUrl } from '~/modules/params';
 import { Network } from '~/modules/services/network';
 import { StorageClient } from '~/modules/services/storage';
 import { usePageName } from '~/modules/state/use-page-name';
 import { EntityNames, Triple } from '~/modules/types';
 import { getEntityDescription, getEntityName, groupBy, navUtils, partition } from '~/modules/utils';
-import { Tick } from '~/modules/design-system/icons/tick';
-import { AnimatePresence } from 'framer-motion';
-import { Truncate } from '~/modules/design-system/truncate';
-import { ResizableContainer } from '~/modules/design-system/resizable-container';
-import Head from 'next/head';
 
 const Content = styled.div(({ theme }) => ({
   border: `1px solid ${theme.colors['grey-02']}`,
@@ -93,6 +92,10 @@ export default function EntityPage({ triples, id, name, space, entityNames, link
       : false
   );
 
+  console.log(linkedEntities);
+
+  const entityUpdateNoop = (triple: Triple, oldTriple: Triple) => {};
+
   return (
     <div>
       <Head>
@@ -162,6 +165,13 @@ export default function EntityPage({ triples, id, name, space, entityNames, link
       <Text as="h2" variant="mediumTitle">
         Linked by
       </Text>
+
+      {/* <EntityTable
+        entityGroups={Object.values(linkedEntities)}
+        entityNames={entityNames}
+        space={space}
+        update={entityUpdateNoop}
+      /> */}
 
       <Entities>
         {Object.entries(linkedEntities).length === 0 ? (
@@ -473,17 +483,20 @@ export const getServerSideProps: GetServerSideProps<Props> = async context => {
     return { ...acc, ...entityNames };
   }, {} as EntityNames);
 
+  const entityNames = {
+    ...entity.entityNames,
+    ...related.entityNames,
+    ...relatedEntityAttributeNames,
+  };
+
   return {
     props: {
       triples: entity.triples,
       id: entityId,
       name: getEntityName(entity.triples) ?? entityId,
       space,
-      entityNames: {
-        ...entity.entityNames,
-        ...related.entityNames,
-        ...relatedEntityAttributeNames,
-      },
+      relatedEntities,
+      entityNames,
       linkedEntities,
       key: entityId,
     },

@@ -55,3 +55,9 @@ export type FilterClause = {
 };
 
 export type FilterState = FilterClause[];
+
+export type EntityGroup = {
+  triples: Triple[];
+  name: string | null;
+  id: string;
+};

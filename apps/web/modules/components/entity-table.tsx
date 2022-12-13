@@ -5,38 +5,25 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
-  RowData,
   useReactTable,
 } from '@tanstack/react-table';
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Chip } from '../design-system/chip';
 import { Text } from '../design-system/text';
 import { createTripleWithId } from '../services/create-id';
 import { useEditable } from '../state/use-editable';
-import { EntityNames, Triple, Value } from '../types';
+import { EntityGroup, EntityNames, Triple, Value } from '../types';
 import { navUtils } from '../utils';
 import { TableCell } from './table/cell';
 import { CellEditableInput } from './table/cell-editable-input';
 import { ChipCellContainer, Container, EmptyTableText, Table, TableHeader, TableRow } from './table/styles';
-
-// We declare a new function that we will define and pass into the useTable hook.
-// See: https://tanstack.com/table/v8/docs/examples/react/editable-data
-declare module '@tanstack/react-table' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  interface TableMeta<TData extends RowData> {
-    space: string;
-    updateData: (rowIndex: number, columnId: string, value: unknown) => void;
-    entityNames: EntityNames;
-    expandedCells: Record<string, boolean>;
-  }
-}
 
 const columnHelper = createColumnHelper<Triple>();
 
 // Table width, minus cell borders
 const COLUMN_SIZE = 1200 / 3;
 
-const columns = [
+const getColumns = [
   columnHelper.accessor(row => row.entityId, {
     id: 'entityId',
     header: () => <Text variant="smallTitle">Entity</Text>,
@@ -55,7 +42,7 @@ const columns = [
 ];
 
 // Give our default column cell renderer editing superpowers!
-const defaultColumn: Partial<ColumnDef<Triple>> = {
+const defaultColumn: Partial<ColumnDef<EntityGroup>> = {
   cell: ({ getValue, row, column: { id }, table, cell }) => {
     const space = table.options.meta!.space;
     const entityNames = table.options?.meta?.entityNames || {};
@@ -167,17 +154,19 @@ const defaultColumn: Partial<ColumnDef<Triple>> = {
 
 interface Props {
   update: (triple: Triple, oldTriple: Triple) => void;
-  triples: Triple[];
+  entityGroups: EntityGroup[];
   space: string;
   entityNames: EntityNames;
 }
 
-export const TripleTable = memo(function TripleTable({ update, triples, entityNames, space }: Props) {
+export const EntityTable = memo(function TripleTable({ update, entityGroups, entityNames, space }: Props) {
   const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({});
   const { editable } = useEditable();
 
+  const columns = useMemo(() => getColumns(), []);
+
   const table = useReactTable({
-    data: triples,
+    data: entityGroups,
     columns,
     defaultColumn,
     getCoreRowModel: getCoreRowModel(),
