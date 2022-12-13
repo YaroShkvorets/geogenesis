@@ -78,11 +78,12 @@ export default function EntityPage({
   linkedEntities,
   relatedEntities,
   columns,
+  rowData,
 }: Props) {
   const { setPageName } = usePageName();
   const [copyText, setCopyText] = useState<'Copy ID' | 'Entity ID Copied'>('Copy ID');
 
-  console.log({ triples, id, name, space, entityNames, linkedEntities, relatedEntities, columns });
+  console.log({ triples, id, name, space, entityNames, linkedEntities, relatedEntities, columns, rowData });
 
   console.log(createColumns(columns));
 
@@ -500,7 +501,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async context => {
     ...related.entityNames,
     ...relatedEntityAttributeNames,
   };
-  const relatedTriples = relatedEntities.flatMap(entity => entity.triples);
+  const relatedTriples = Object.values(linkedEntities).flatMap(entity => entity.triples);
 
   const columnsMap = relatedTriples.reduce((acc, triple) => {
     if (!acc[triple.attributeId])
@@ -510,6 +511,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async context => {
       };
     return acc;
   }, {} as Record<string, { accessor: string; label: string }>);
+
+  const rowLabels = Object.values(linkedEntities).map(entity => entityNames[entity.id] || 'invalid name');
+
+  const rowData = Object.values(linkedEntities).map(entity => {
+    return entity.triples.reduce((acc, triple) => {
+      acc[triple.attributeId] = {
+        ...triple.value,
+        value: triple.value.value || entityNames[triple.value.id] || '',
+      };
+      return acc;
+    }, {} as Record<string, string>);
+  });
 
   return {
     props: {
@@ -522,6 +535,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async context => {
       entityNames,
       linkedEntities,
       key: entityId,
+      rowData,
     },
   };
 };

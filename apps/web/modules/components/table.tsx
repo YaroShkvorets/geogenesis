@@ -127,6 +127,7 @@ const defaultColumn: Partial<ColumnDef<Triple>> = {
 
     const cellId = `${row.original.id}-${cell.column.id}`;
 
+    console.log(row.original.entityName);
     switch (id) {
       case 'entityId': {
         const entityId = cellData as string;
