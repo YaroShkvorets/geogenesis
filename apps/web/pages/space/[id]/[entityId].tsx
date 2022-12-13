@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import pluralize from 'pluralize';
 import { useEffect, useState } from 'react';
+import { EntityTable } from '~/modules/components/entity-table';
 import { SmallButton } from '~/modules/design-system/button';
 import { Chip } from '~/modules/design-system/chip';
 import { ChevronDownSmall } from '~/modules/design-system/icons/chevron-down-small';
@@ -59,6 +60,7 @@ interface Props {
   space: string;
   entityNames: EntityNames;
   linkedEntities: Record<string, EntityGroup>;
+  entitySchema: string[];
 }
 
 const CopyText = styled(Text)`
@@ -68,7 +70,7 @@ const CopyText = styled(Text)`
 
 const MotionCopyText = motion(CopyText);
 
-export default function EntityPage({ triples, id, name, space, entityNames, linkedEntities }: Props) {
+export default function EntityPage({ triples, id, name, space, entityNames, linkedEntities, entitySchema }: Props) {
   const { setPageName } = usePageName();
   const [copyText, setCopyText] = useState<'Copy ID' | 'Entity ID Copied'>('Copy ID');
 
@@ -91,8 +93,6 @@ export default function EntityPage({ triples, id, name, space, entityNames, link
       ? t.value.value !== description
       : false
   );
-
-  console.log(linkedEntities);
 
   const entityUpdateNoop = (triple: Triple, oldTriple: Triple) => {};
 
@@ -166,12 +166,13 @@ export default function EntityPage({ triples, id, name, space, entityNames, link
         Linked by
       </Text>
 
-      {/* <EntityTable
+      <EntityTable
         entityGroups={Object.values(linkedEntities)}
+        entitySchema={entitySchema}
         entityNames={entityNames}
         space={space}
         update={entityUpdateNoop}
-      /> */}
+      />
 
       <Entities>
         {Object.entries(linkedEntities).length === 0 ? (
@@ -489,6 +490,17 @@ export const getServerSideProps: GetServerSideProps<Props> = async context => {
     ...relatedEntityAttributeNames,
   };
 
+  const attributeIds = Object.values(linkedEntities)
+    .flatMap(entityGroup => entityGroup.triples)
+    .flatMap(triple => triple.attributeId);
+
+  /* 
+      MVP EntitySchema is a unique list of attributeIds from the linked entities.
+      In the future, EntitySchema will be returned from the subgraph. Design pending.
+      ~ @makeitrein
+    */
+  const entitySchema = [...new Set(attributeIds)];
+
   return {
     props: {
       triples: entity.triples,
@@ -497,6 +509,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async context => {
       space,
       relatedEntities,
       entityNames,
+      entitySchema,
       linkedEntities,
       key: entityId,
     },

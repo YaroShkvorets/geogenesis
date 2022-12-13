@@ -18,34 +18,34 @@ import { TableCell } from './table/cell';
 import { CellEditableInput } from './table/cell-editable-input';
 import { ChipCellContainer, Container, EmptyTableText, Table, TableHeader, TableRow } from './table/styles';
 
-const columnHelper = createColumnHelper<Triple>();
+const columnHelper = createColumnHelper<EntityGroup>();
 
 // Table width, minus cell borders
 const COLUMN_SIZE = 1200 / 3;
 
-const getColumns = [
-  columnHelper.accessor(row => row.entityId, {
-    id: 'entityId',
-    header: () => <Text variant="smallTitle">Entity</Text>,
-    size: COLUMN_SIZE,
-  }),
-  columnHelper.accessor(row => row.attributeId, {
-    id: 'attributeId',
-    header: () => <Text variant="smallTitle">Attribute</Text>,
-    size: COLUMN_SIZE,
-  }),
-  columnHelper.accessor(row => row.value, {
-    id: 'value',
-    header: () => <Text variant="smallTitle">Value</Text>,
-    size: COLUMN_SIZE,
-  }),
-];
+const getColumns = (entitySchema: string[], entityNames: EntityNames) => {
+  const columns = entitySchema.map(attributeId => {
+    /*
+      Might be worth restructuring EntityGroup to be have a map of triples by attributeId instead of an array.
+      This would allow us to use the columnHelper.accessor function to easily get the value rather than having to
+      do a find on the array.
+    */
+    return columnHelper.accessor(row => row.triples.find(triple => triple.attributeId === attributeId)?.value, {
+      id: attributeId,
+      header: () => <Text variant="smallTitle">{entityNames[attributeId] || attributeId}</Text>,
+      size: COLUMN_SIZE,
+    });
+  });
+
+  return columns;
+};
 
 // Give our default column cell renderer editing superpowers!
 const defaultColumn: Partial<ColumnDef<EntityGroup>> = {
   cell: ({ getValue, row, column: { id }, table, cell }) => {
     const space = table.options.meta!.space;
     const entityNames = table.options?.meta?.entityNames || {};
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const { editable } = useEditable();
 
@@ -65,90 +65,32 @@ const defaultColumn: Partial<ColumnDef<EntityGroup>> = {
 
     const cellId = `${row.original.id}-${cell.column.id}`;
 
-    switch (id) {
-      case 'entityId': {
-        const entityId = cellData as string;
+    const value = cellData as Value;
 
-        // TODO: Instead of a direct input this should be an autocomplete field for entity names/ids
-
-        const value = editable ? entityId : entityNames[entityId] || entityId;
-
-        return (
-          <CellEditableInput
-            isEntity
-            href={navUtils.toEntity(space, entityId)}
-            isExpanded={table.options?.meta?.expandedCells[cellId]}
-            placeholder="Add text..."
-            isEditable={editable}
-            value={value}
-            onChange={e => setCellData(e.target.value)}
-            onBlur={onBlur}
-          />
-        );
-
-        // return (
-        //   <CellTruncate shouldTruncate={true}>
-        //     <Text color="ctaPrimary" variant="tableCell" ellipsize>
-        //       {entityNames[entityId] || entityId}
-        //     </Text>
-        //   </CellTruncate>
-        // );
-      }
-      case 'attributeId': {
-        const attributeId = cellData as string;
-
-        const value = editable ? attributeId : entityNames[attributeId] || attributeId;
-
-        return (
-          <CellEditableInput
-            placeholder="Add an attribute..."
-            isEditable={editable}
-            value={value}
-            onChange={e => setCellData(e.target.value)}
-            onBlur={onBlur}
-          />
-        );
-      }
-      case 'value': {
-        const value = cellData as Value;
-
-        if (value.type === 'entity') {
-          return (
-            <ChipCellContainer>
-              <Chip href={navUtils.toEntity(space, value.id)}>{entityNames[value.id] || value.id}</Chip>
-            </ChipCellContainer>
-          );
-        }
-
-        // TODO: FIX HACK
-        // This is a super hacky workaround for now to be able to view a entity where the value string
-        // is the same as the entity id.
-        if (entityNames[value.value]) {
-          return (
-            <ChipCellContainer>
-              <Chip href={navUtils.toEntity(space, value.value)}>{entityNames[value.value]}</Chip>
-            </ChipCellContainer>
-          );
-        }
-
-        return (
-          <CellEditableInput
-            isExpanded={table.options?.meta?.expandedCells[cellId]}
-            placeholder="Add text..."
-            isEditable={editable}
-            value={value.value}
-            onChange={e =>
-              setCellData({
-                id: value.id,
-                type: 'string',
-                value: e.target.value,
-              })
-            }
-            onBlur={onBlur}
-          />
-        );
-      }
+    if (value.type === 'entity') {
+      return (
+        <ChipCellContainer>
+          <Chip href={navUtils.toEntity(space, value.id)}>{entityNames[value.id] || value.id}</Chip>
+        </ChipCellContainer>
+      );
     }
+
+    return (
+      <CellEditableInput
+        isExpanded={table.options?.meta?.expandedCells[cellId]}
+        placeholder="Add text..."
+        isEditable={editable}
+        value={value.value}
+        onChange={e =>
+          setCellData({
+            id: value.id,
+            type: 'string',
+            value: e.target.value,
+          })
+        }
+        onBlur={onBlur}
+      />
+    );
   },
 };
 
@@ -157,13 +99,20 @@ interface Props {
   entityGroups: EntityGroup[];
   space: string;
   entityNames: EntityNames;
+  entitySchema: string[];
 }
 
-export const EntityTable = memo(function TripleTable({ update, entityGroups, entityNames, space }: Props) {
+export const EntityTable = memo(function TripleTable({
+  update,
+  entityGroups,
+  entityNames,
+  space,
+  entitySchema,
+}: Props) {
   const [expandedCells, setExpandedCells] = useState<Record<string, boolean>>({});
   const { editable } = useEditable();
 
-  const columns = useMemo(() => getColumns(), []);
+  const columns = useMemo(() => getColumns(entitySchema, entityNames), [entitySchema, entityNames]);
 
   const table = useReactTable({
     data: entityGroups,
@@ -180,6 +129,7 @@ export const EntityTable = memo(function TripleTable({ update, entityGroups, ent
     },
     meta: {
       updateData: (rowIndex, columnId, cellValue) => {
+        return null;
         const oldEntityId = triples[rowIndex].entityId;
         const oldAttributeId = triples[rowIndex].attributeId;
         const oldValue = triples[rowIndex].value;
