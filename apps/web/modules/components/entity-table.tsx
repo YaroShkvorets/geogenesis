@@ -67,7 +67,9 @@ const defaultColumn: Partial<ColumnDef<EntityGroup>> = {
 
     const value = cellData as Value;
 
-    if (value.type === 'entity') {
+    if (!value) {
+      return null;
+    } else if (value.type === 'entity') {
       return (
         <ChipCellContainer>
           <Chip href={navUtils.toEntity(space, value.id)}>{entityNames[value.id] || value.id}</Chip>
