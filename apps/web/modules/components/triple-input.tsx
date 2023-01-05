@@ -1,7 +1,10 @@
 import styled from '@emotion/styled';
+import { DropdownMenuArrowProps } from '@radix-ui/react-dropdown-menu';
 import { useRect } from '@radix-ui/react-use-rect';
-import { useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { i } from 'vitest/dist/index-ea17aa0c';
 import { IconButton } from '../design-system/button';
+import { Dropdown } from '../design-system/dropdown';
 import { CheckCloseSmall } from '../design-system/icons/check-close-small';
 import { Search } from '../design-system/icons/search';
 import { Input } from '../design-system/input';
@@ -11,8 +14,8 @@ import { FilterClause } from '../types';
 import { FilterDialog } from './filter/dialog';
 
 const SearchIconContainer = styled.div(props => ({
-  position: 'absolute',
-  left: props.theme.space * 3,
+  position: 'relative',
+  left: props.theme.space * 6,
   top: props.theme.space * 2.5,
   zIndex: 100,
 }));
@@ -79,6 +82,14 @@ const AdvancedFilters = styled.div(props => ({
   backgroundColor: props.theme.colors.white,
 }));
 
+const DropdownContainer = styled.div({
+  position: 'absolute',
+  top: '100%',
+  left: 0,
+  right: 0,
+  zIndex: 100,
+});
+
 interface Props {
   showPredefinedQueries: boolean;
   onShowPredefinedQueriesChange: (showPredefinedQueries: boolean) => void;
@@ -89,6 +100,16 @@ export function TripleInput({ showPredefinedQueries, onShowPredefinedQueriesChan
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const inputRect = useRect(inputContainerRef.current);
   const showBasicFilter = tripleStore.filterState.length === 1 && tripleStore.filterState[0].field === 'entity-name';
+  const selectedTypeFilter = showBasicFilter ? 'All Types' : tripleStore.filterState[0].value;
+
+  const onTypeFilterClick = (type: string) => {
+    tripleStore.setFilterState([
+      {
+        field: 'value',
+        value: type,
+      },
+    ]);
+  };
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     tripleStore.setQuery(event.target.value);
@@ -99,8 +120,36 @@ export function TripleInput({ showPredefinedQueries, onShowPredefinedQueriesChan
     tripleStore.setFilterState(filteredFilters);
   };
 
+  const tripleTypes = useMemo(() => {
+    const tripleTypeSet = new Set<string>();
+
+    tripleStore.triples.forEach(triple => {
+      if (
+        triple.attributeName === 'Types' && // only show types
+        triple.value.type === 'entity' && // only show entities
+        triple.value.name && // only show entities with a name
+        !tripleTypeSet.has(triple.value.name) // only show unique entities
+      ) {
+        tripleTypeSet.add(triple.value.name);
+      }
+    });
+
+    // return the set mapped to dropdown options
+    return Array.from(tripleTypeSet).map(tripleType => ({
+      label: tripleType,
+      value: tripleType,
+      onClick: () => {
+        onTypeFilterClick(tripleType);
+      },
+      disabled: false,
+    }));
+  }, [tripleStore.triples]);
+
   return (
     <InputContainer ref={inputContainerRef}>
+      <Dropdown trigger={selectedTypeFilter || 'All Types'} options={tripleTypes} />
+      <Spacer />
+
       <SearchIconContainer>
         <Search />
       </SearchIconContainer>
