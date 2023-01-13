@@ -15,6 +15,126 @@
       "address": "0x9952B5C325981fa48Df48BfCCdb019161E9e56D3",
       "txHash": "0xfafedd87721f08c559dd0c7fc80c73b4a61756650a3dee504c89160a11045e69",
       "kind": "beacon"
+    },
+    {
+      "address": "0x9Aa5f1713096FefF30d8a4662Fa19d33520b52B3",
+      "txHash": "0xa4ea87b1d362a34afc49d3b7d93b39084f13f0461c7c5d4c45bf2ca439c28c30",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xB68873e86B39497af21404AdE1E922C29B141aFa",
+      "txHash": "0x9b44a4dd4c8f64d5b745b2ddc3931c57184ab5de58070607060ebfa48098a905",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x0995abB5375F4f8EbF23F3511FdE0111eB5c7DA1",
+      "txHash": "0x2e25bd2cb882efb8e82761e854ad2fe60fdb87a1b833e8c06a9163b207b83c8e",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x2bE85A2b6685Cb74a1F676e89E0E9EFBE0088535",
+      "txHash": "0xe03026298e4bdefa9cbcdfd78b9d0e722b51f8d586365f5482b1501cfce7844b",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xEcC4016C71fF38B32f01538207B6F0FdcbCF99f5",
+      "txHash": "0x0356abe93603cfd74f3df959d0e0cd88dc6d90d52bdf4af55e46390e86a7663a",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x88c34D9c207c0D39E0D26cd68859fdbe17d60eC0",
+      "txHash": "0xf1bf3e7db561f69e67d3e04f92f609f94ac18dde3621da6bc4118fc8f0296c2b",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xD065A680075d0e27777bAa63CFFf17e1713a19Df",
+      "txHash": "0xa9529ab258e460a97a12599c7805bca916c8c29d593b43fec99759dc7f02359c",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x06bbE7C72cc24e07d0f6aeEe5d88B4Ad879D4cEb",
+      "txHash": "0x5152d0408e52b643ca45e1e2c07bbce84f9fbce97f9e877cf76d0a1a22a593de",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x170b749413328ac9a94762031a7A05b00c1D2e34",
+      "txHash": "0x4b5950fcccfca9de2625d709b6111dee85d37f5dcb4efe7b9029d7553bd1fb6f",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xe3d08763498e3247EC00A481F199B018f2148723",
+      "txHash": "0xe922781d11a26729243446c38defdca7617d5c3db6072f03b1c2f9e228b6535b",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xc46618C200f02EF1EEA28923FC3828301e63C4Bd",
+      "txHash": "0x790863fbde2c2cc5d46db11587b727c5fe04c6349584a7996b76f14bc5b3741a",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x01Bb7de7eC818221005b69ae5bAc9D22464427C8",
+      "txHash": "0xd0db5665d2a61fa103438f4676503832f87998cfc98079916531674b4a480b86",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x6283A6AD1383861F41B3F096E744560092764d36",
+      "txHash": "0x70e471e4b4222ef961d0e5e7944f35faf4244cc339b5a08a8f7f8e44d8e11686",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xEB50f27B6E5FB2f678F334f072a1918b8dbE35A9",
+      "txHash": "0x6aac4cb0d88c29cd163db441aae08fa5b4a1900c04f5d4c6629171724c93a542",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x2ABb908f650A026E9D0dd42E9f750EF06D1d1E2D",
+      "txHash": "0xe49b54832b2e40d946c5c6edf1248b1e81559515368653120f4b8e72310f572a",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xf4Df43b7D931e4ED0D177E53191FE10714E3D587",
+      "txHash": "0x37a82610e7fcce0815b59727bdd58a8225a8871c95f4974dcaaf3fd4b8084d3f",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xB4B3d95e9c82cb26A5bd4BC73ffBa46F1e979f16",
+      "txHash": "0x236f6032285f3f04495faba08b56b36b49815eeb846c32c9d55c77a0cfcfe667",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x1A39E2Fe299Ef8f855ce43abF7AC85D6e69E05F5",
+      "txHash": "0x365eb9fed0f3cd1fab4e1e5658b99ee7eabdf1262766b3318db0eaf1200859ef",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xfedC5Ea382ab43998EeAC230383304fEA4534C14",
+      "txHash": "0xface468d017c563d3f5c43698f0341dc3b4facdb6076209f7edefaa6f90af263",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xC0F52b1bEF2c33BbBA2c6A56c3247D55150e0618",
+      "txHash": "0xbeb0fa55f222515776bd7653299992b5543e8183fbfe50fe7f32b6423f085e85",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xEC07c19743179f1AC904Fee97a1A99310e500aB6",
+      "txHash": "0x79340030b6c0064fe5812b2f9008e7e4195f2d59376e7c378ef28cbc89b982f2",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x925eE636215bB151245D56A5ab416Edb29F16020",
+      "txHash": "0xb24dd8b9b5693713de85b3e8893e27da54c61c25e96f13ab934cb0c7377cdb3b",
+      "kind": "beacon"
+    },
+    {
+      "address": "0xb4476A42A66eC1356A58D300555169E17db6756c",
+      "txHash": "0xb39d540a0d174feb0ce6e0bf7de546dce8c1e931591236857a7f305dc939bf31",
+      "kind": "beacon"
+    },
+    {
+      "address": "0x276187Ac0D3a61EAAf3D5Af443dA932EFba7A661",
+      "txHash": "0x467e29be79ba36df81ea7e8087bdd882ca05d0cff9a4c4166e6d9b5685dda22b",
+      "kind": "beacon"
     }
   ],
   "impls": {
