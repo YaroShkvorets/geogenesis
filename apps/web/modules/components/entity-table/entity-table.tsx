@@ -13,6 +13,8 @@ import {
 import { memo, useState } from 'react';
 import { useActionsStoreContext } from '~/modules/action';
 import { useAccessControl } from '~/modules/auth/use-access-control';
+import { SquareButton } from '~/modules/design-system/button';
+import { RightArrowDiagonal } from '~/modules/design-system/icons/right-arrow-diagonal';
 import { DEFAULT_PAGE_SIZE, Entity, useEntityTable } from '~/modules/entity';
 import { useEditable } from '~/modules/stores/use-editable';
 import { Triple } from '~/modules/triple';
@@ -141,13 +143,24 @@ export const EntityTable = memo(function EntityTable({ rows, space, columns }: P
         <thead>
           {table.getHeaderGroups().map(headerGroup => (
             <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
+              {headerGroup.headers.map((header, index) => (
                 <SpaceHeader
                   style={{ minWidth: header.column.getSize() }}
-                  className="border border-grey-02 border-b-0 text-left p-[10px]"
+                  className="relative border border-grey-02 border-b-0 text-left p-[10px]"
                   key={header.id}
                 >
                   {flexRender(header.column.columnDef.header, header.getContext())}
+                  {/* 
+                    The name column is not editable
+                    TODO: The column should only be editable if there's no triples remotely that have this attributeId
+                  */}
+                  {index !== 0 && (
+                    <div className="absolute right-3 bottom-[10.5px]">
+                      <SquareButton>
+                        <RightArrowDiagonal />
+                      </SquareButton>
+                    </div>
+                  )}
                 </SpaceHeader>
               ))}
             </tr>
