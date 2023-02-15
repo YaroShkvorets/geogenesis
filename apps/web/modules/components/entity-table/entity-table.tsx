@@ -78,6 +78,7 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
       actions$.get()[space],
       actions => Triple.fromActions(actions, cellData.triples),
       A.filter(t => t.entityId === cellData.entityId),
+      A.filter(t => t.attributeId === cellData.columnId),
       A.uniqBy(t => t.id)
     );
 
@@ -93,7 +94,7 @@ const defaultColumn: Partial<ColumnDef<Row>> = {
         />
       );
     } else if (cellData && !isPlaceholderCell) {
-      return <EntityTableCell cell={cellData} space={space} isExpanded={isExpanded} />;
+      return <EntityTableCell cell={cellData} triples={cellTriples} space={space} isExpanded={isExpanded} />;
     } else {
       return null;
     }

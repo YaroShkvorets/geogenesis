@@ -1,6 +1,5 @@
 import styled from '@emotion/styled';
 import Head from 'next/head';
-import { useActionsStore } from '~/modules/action';
 import { Button, SquareButton } from '~/modules/design-system/button';
 import { DeletableChipButton } from '~/modules/design-system/chip';
 import { Relation } from '~/modules/design-system/icons/relation';
@@ -57,37 +56,13 @@ const AddTripleContainer = styled.div(({ theme }) => ({
 }));
 
 interface Props {
-  triples: TripleType[];
-  schemaTriples: TripleType[];
   id: string;
   name: string;
   space: string;
 }
 
-export function EditableEntityPage({
-  id,
-  name: serverName,
-  space,
-  schemaTriples: serverSchemaTriples,
-  triples: serverTriples,
-}: Props) {
-  const {
-    triples: localTriples,
-    schemaTriples: localSchemaTriples,
-    update,
-    create,
-    remove,
-    hideSchema,
-    hiddenSchemaIds,
-  } = useEntityStore();
-
-  const { actions } = useActionsStore(space);
-
-  // We hydrate the local editable store with the triples from the server. While it's hydrating
-  // we can fallback to the server triples so we render real data and there's no layout shift.
-  const triples = localTriples.length === 0 && actions.length === 0 ? serverTriples : localTriples;
-  const schemaTriples = localSchemaTriples.length === 0 ? serverSchemaTriples : localSchemaTriples;
-
+export function EditableEntityPage({ id, name: serverName, space }: Props) {
+  const { triples, schemaTriples, update, create, remove, hideSchema, hiddenSchemaIds } = useEntityStore();
   const nameTriple = Entity.nameTriple(triples);
   const descriptionTriple = Entity.descriptionTriple(triples);
   const description = Entity.description(triples);

@@ -43,13 +43,9 @@ const Layout = styled.main(props => ({
   },
 }));
 
-const Relative = styled.div({
-  position: 'relative',
-});
-
 function Root(props: AppProps) {
   return (
-    <Relative>
+    <div className="relative">
       <Providers>
         <Head>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -58,7 +54,7 @@ function Root(props: AppProps) {
         <Global styles={globalStyles} />
         <App {...props} />
       </Providers>
-    </Relative>
+    </div>
   );
 }
 
