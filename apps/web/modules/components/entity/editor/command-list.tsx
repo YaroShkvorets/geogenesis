@@ -45,7 +45,8 @@ const commandItems: CommandSuggestionItem[] = [
     icon: <div className={'flex items-center justify-center text-[1.4em]'}>H2</div>,
     title: 'Heading 2',
     description: 'Medium section heading.',
-    command: ({ editor, range }) => {
+    command: editor => {
+      const range = getRange(editor);
       editor.chain().focus().deleteRange(range).setNode('heading', { level: 2 }).run();
     },
   },
@@ -53,11 +54,14 @@ const commandItems: CommandSuggestionItem[] = [
     icon: <div className={'flex items-center justify-center text-[1.2em]'}>H3</div>,
     title: 'Heading 3',
     description: 'Small section heading.',
-    command: ({ editor, range }) => {
+    command: editor => {
+      const range = getRange(editor);
       editor.chain().focus().deleteRange(range).setNode('heading', { level: 3 }).run();
     },
   },
 ];
+
+export const containerWidth = 300;
 
 export const CommandList = ({ editor, closeMenu }: { editor: Editor; closeMenu: () => void }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -71,37 +75,40 @@ export const CommandList = ({ editor, closeMenu }: { editor: Editor; closeMenu: 
   };
   useEffect(() => setSelectedIndex(0), [commandItems]);
 
-  // const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handlekeydownEvent(event: KeyboardEvent) {
+      if (event.key === 'ArrowUp') {
+        setSelectedIndex(selectedIndex => selectedIndex - 1);
+        return true;
+      }
 
-  // useImperativeHandle(ref, () => ({
-  //   onKeyDown: ({ event }) => {
-  //     if (event.key === 'ArrowUp') {
-  //       setSelectedIndex((selectedIndex + commandItems.length - 1) % commandItems.length);
-  //       return true;
-  //     }
+      if (event.key === 'ArrowDown') {
+        setSelectedIndex(selectedIndex => selectedIndex + 1);
+        return true;
+      }
 
-  //     if (event.key === 'ArrowDown') {
-  //       setSelectedIndex((selectedIndex + 1) % commandItems.length);
-  //       return true;
-  //     }
+      if (event.key === 'Enter') {
+        selectItem(selectedIndex);
+        return true;
+      }
 
-  //     if (event.key === 'Enter') {
-  //       selectItem(selectedIndex);
-  //       return true;
-  //     }
+      return false;
+    }
 
-  //     return false;
-  //   },
-  // }));
+    document.addEventListener('keyup', handlekeydownEvent);
+    return () => {
+      document.removeEventListener('keyup', handlekeydownEvent);
+    };
+  }, []);
 
   return (
-    <div style={{ width: 600 }} className="items relative flex h-80 flex-col overflow-y-auto">
+    <div style={{ width: containerWidth }} className="items relative flex h-80 flex-col overflow-y-auto">
       {commandItems.map((item, index) => (
         <button
           type={'button'}
           className={classNames(
-            `item ${index === selectedIndex ? 'is-selected bg-gray-200' : ''}`,
-            'hover:bg-gray-200 flex gap-2 rounded p-1'
+            `item ${index === selectedIndex ? 'is-selected bg-ctaPrimary' : ''}`,
+            'hover:bg-gray-200 flex w-full gap-2 rounded'
           )}
           key={index}
           data-index={index}

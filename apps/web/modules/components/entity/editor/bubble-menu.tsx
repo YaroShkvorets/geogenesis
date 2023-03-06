@@ -1,8 +1,8 @@
 import { autoUpdate, flip, offset, useFloating } from '@floating-ui/react-dom';
-import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { Editor, isNodeSelection, posToDOMRect } from '@tiptap/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ReactNode, useLayoutEffect } from 'react';
+import { containerWidth } from './command-list';
 
 type Props = {
   editor: Editor;
@@ -10,7 +10,6 @@ type Props = {
   children: ReactNode;
 };
 
-const containerWidth = 600;
 // Adapted from https://github.com/ueberdosis/tiptap/issues/2305#issuecomment-1020665146
 export const ControlledBubbleMenu = ({ editor, children, open }: Props) => {
   const { x, y, strategy, reference, floating } = useFloating({
@@ -48,24 +47,22 @@ export const ControlledBubbleMenu = ({ editor, children, open }: Props) => {
   }, [reference, editor]);
 
   return (
-    <PopoverPrimitive.Root>
-      <AnimatePresence mode="wait">
-        {open ? (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            exit={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.1,
-              ease: 'easeInOut',
-            }}
-            className="relative z-[1] rounded border border-grey-02 bg-white p-3 shadow-button md:mx-auto md:w-[98vw] md:self-start"
-            style={{ width: `calc(${containerWidth}px / 2)`, top: y ?? 0, left: x ?? 0 }}
-          >
-            {children}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </PopoverPrimitive.Root>
+    <AnimatePresence mode="wait">
+      {open ? (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          exit={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.1,
+            ease: 'easeInOut',
+          }}
+          className="z-[1] rounded border border-grey-02 bg-white shadow-button md:mx-auto md:w-[98vw] md:self-start"
+          style={{ width: containerWidth, top: y ?? 0, left: x ?? 0 }}
+        >
+          {children}
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 };
