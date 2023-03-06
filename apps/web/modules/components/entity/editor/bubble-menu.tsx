@@ -50,6 +50,7 @@ export const ControlledBubbleMenu = ({ editor, children, open }: Props) => {
     <AnimatePresence mode="wait">
       {open ? (
         <motion.div
+          ref={floating}
           initial={{ opacity: 0, y: -10 }}
           exit={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -58,7 +59,7 @@ export const ControlledBubbleMenu = ({ editor, children, open }: Props) => {
             ease: 'easeInOut',
           }}
           className="z-[1] rounded border border-grey-02 bg-white shadow-button md:mx-auto md:w-[98vw] md:self-start"
-          style={{ width: containerWidth, top: y ?? 0, left: x ?? 0 }}
+          style={{ width: containerWidth, position: strategy, top: y ?? 0, left: x ?? 0 }}
         >
           {children}
         </motion.div>

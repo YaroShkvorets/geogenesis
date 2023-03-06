@@ -39,7 +39,7 @@ export const Editor = ({ editable = true }: Props) => {
   return (
     <div>
       <EditorContent editor={editor} />
-      {editor && isBrowser && (
+      {editor && isBrowser && menuOpen && (
         <ControlledBubbleMenu editor={editor} open={menuOpen}>
           <CommandList editor={editor} closeMenu={() => setMenuOpen(false)} />
         </ControlledBubbleMenu>

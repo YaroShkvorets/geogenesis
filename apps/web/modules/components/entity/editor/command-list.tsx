@@ -38,7 +38,7 @@ const commandItems: CommandSuggestionItem[] = [
     description: 'Big section heading.',
     command: editor => {
       const range = getRange(editor);
-      editor.chain().focus().deleteRange(range).setNode('heading', { level: 1 }).run();
+      editor.chain().focus().toggleHeading({ level: 1 }).run();
     },
   },
   {
@@ -47,7 +47,7 @@ const commandItems: CommandSuggestionItem[] = [
     description: 'Medium section heading.',
     command: editor => {
       const range = getRange(editor);
-      editor.chain().focus().deleteRange(range).setNode('heading', { level: 2 }).run();
+      editor.chain().focus().toggleHeading({ level: 2 }).run();
     },
   },
   {
@@ -56,7 +56,7 @@ const commandItems: CommandSuggestionItem[] = [
     description: 'Small section heading.',
     command: editor => {
       const range = getRange(editor);
-      editor.chain().focus().deleteRange(range).setNode('heading', { level: 3 }).run();
+      editor.chain().focus().toggleHeading({ level: 3 }).run();
     },
   },
 ];
@@ -99,10 +99,10 @@ export const CommandList = ({ editor, closeMenu }: { editor: Editor; closeMenu: 
     return () => {
       document.removeEventListener('keyup', handlekeydownEvent);
     };
-  }, []);
+  }, [selectItem, selectedIndex]);
 
   return (
-    <div style={{ width: containerWidth }} className="items relative flex h-80 flex-col overflow-y-auto">
+    <div style={{ width: containerWidth }} className="items relative flex  flex-col overflow-y-auto">
       {commandItems.map((item, index) => (
         <button
           type={'button'}
