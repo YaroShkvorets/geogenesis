@@ -9,7 +9,7 @@ type Props = {
 };
 
 // Adapted from https://github.com/ueberdosis/tiptap/issues/2305#issuecomment-1020665146
-export const ControlledBubbleMenu = ({ editor, open, children }: Props) => {
+export const ControlledBubbleMenu = ({ editor, children }: Props) => {
   const { x, y, strategy, reference, floating } = useFloating({
     strategy: 'fixed',
     whileElementsMounted: autoUpdate,
@@ -39,19 +39,15 @@ export const ControlledBubbleMenu = ({ editor, open, children }: Props) => {
           }
         }
 
-        console.log('posToDOMRect', posToDOMRect);
         return posToDOMRect(editor.view, from, to);
       },
     });
   }, [reference, editor]);
 
-  if (!open) {
-    return null;
-  }
-
   return (
     <div
       ref={floating}
+      className="absolute z-50 rounded bg-white p-2 shadow-lg"
       style={{
         position: strategy,
         top: y ?? 0,
