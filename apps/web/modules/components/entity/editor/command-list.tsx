@@ -95,7 +95,7 @@ export const CommandList = ({ editor, closeMenu }: { editor: Editor; closeMenu: 
   // }));
 
   return (
-    <div className="items relative flex h-80 w-80 flex-col overflow-y-auto rounded border p-1 shadow-lg">
+    <div style={{ width: 600 }} className="items relative flex h-80 flex-col overflow-y-auto">
       {commandItems.map((item, index) => (
         <button
           type={'button'}
