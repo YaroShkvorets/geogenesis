@@ -25,12 +25,6 @@ import { LocalStore } from '../local-store';
 
 const markdownConverter = new showdown.Converter();
 
-interface IEntityStore {
-  create(triple: ITriple): void;
-  update(triple: ITriple, oldTriple: ITriple): void;
-  remove(triple: ITriple): void;
-}
-
 export const createInitialDefaultTriples = (spaceId: string, entityId: string): ITriple[] => {
   const nameTriple = Triple.withId({
     space: spaceId,
@@ -89,11 +83,9 @@ interface IEntityStoreConfig {
   initialBlockIdsTriple: ITriple | null;
   initialBlockTriples: ITriple[];
   ActionsStore: ActionsStore;
-  LocalStore: LocalStore;
 }
 
-export class EntityStore implements IEntityStore {
-  private LocalStore: LocalStore;
+export class EntityStore {
   private subgraph: Subgraph.ISubgraph;
   private config: Environment.AppConfig;
   id: string;
@@ -118,7 +110,6 @@ export class EntityStore implements IEntityStore {
     spaceId,
     id,
     ActionsStore,
-    LocalStore,
     subgraph,
     config,
   }: IEntityStoreConfig) {
@@ -130,7 +121,6 @@ export class EntityStore implements IEntityStore {
     this.schemaTriples$ = observable([...initialSchemaTriples, ...defaultTriples]);
     this.spaceId = spaceId;
     this.ActionsStore = ActionsStore;
-    this.LocalStore = LocalStore;
 
     this.triples$ = computed(() => {
       const spaceActions = ActionsStore.actions$.get()[spaceId] ?? [];
