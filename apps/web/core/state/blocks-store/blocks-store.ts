@@ -7,7 +7,7 @@ import showdown from 'showdown';
 import { TableBlockSdk } from '~/core/blocks-sdk';
 import { useActionsStore } from '~/core/hooks/use-actions-store';
 import { ID } from '~/core/id';
-import { CreateTripleAction, EditTripleAction, Triple as ITriple } from '~/core/types';
+import { CreateTripleAction, EditTripleAction, EntityValue, Triple as ITriple } from '~/core/types';
 import { Triple } from '~/core/utils/triple';
 import { Value } from '~/core/utils/value';
 
@@ -19,6 +19,19 @@ const markdownConverter = new showdown.Converter();
 // Returns the id of the first paragraph even if nested inside of a list
 function getNodeId(node: JSONContent) {
   return node.attrs?.id ?? node?.content?.[0]?.content?.[0]?.attrs?.id;
+}
+
+function getBlockTypeValue(nodeType?: string): EntityValue {
+  switch (nodeType) {
+    case 'paragraph':
+      return { id: SYSTEM_IDS.TEXT_BLOCK, type: 'entity', name: 'Text Block' };
+    case 'image':
+      return { id: SYSTEM_IDS.IMAGE_BLOCK, type: 'entity', name: 'Image Block' };
+    case 'tableNode':
+      return { id: SYSTEM_IDS.TABLE_BLOCK, type: 'entity', name: 'Table Block' };
+    default:
+      return { id: SYSTEM_IDS.TEXT_BLOCK, type: 'entity', name: 'Text Block' };
+  }
 }
 
 function getTextNodeHtml(node: JSONContent) {
@@ -35,6 +48,37 @@ function getNodeName(node: JSONContent) {
   const nodeHTML = getTextNodeHtml(node);
   const nodeNameLength = 20;
   return htmlToPlainText(nodeHTML).slice(0, nodeNameLength);
+}
+
+function getBlockTypeTriple({
+  node,
+  existingBlockTypeTriple,
+  spaceId,
+}: {
+  node: JSONContent;
+  existingBlockTypeTriple: ITriple | null;
+  spaceId: string;
+}): CreateTripleAction | null {
+  const blockEntityId = getNodeId(node);
+  const entityName = getNodeName(node);
+
+  const blockTypeValue: EntityValue = getBlockTypeValue(node.type);
+
+  if (!existingBlockTypeTriple) {
+    return {
+      type: 'createTriple',
+      ...Triple.withId({
+        space: spaceId,
+        entityId: blockEntityId,
+        entityName: entityName,
+        attributeId: SYSTEM_IDS.TYPES,
+        attributeName: 'Types',
+        value: blockTypeValue,
+      }),
+    };
+  }
+
+  return null;
 }
 
 function getNewTableBlockMetadataTriples({
@@ -164,12 +208,15 @@ function upsertBlockMarkdownTriple({
     };
   } else if (isUpdated) {
     return {
-      type: 'updateTriple',
-      before: existingBlockTriple,
-      after: Triple.ensureStableId({
-        ...existingBlockTriple,
-        value: { ...existingBlockTriple.value, type: 'string', value: markdown },
-      }),
+      type: 'editTriple',
+      before: { type: 'deleteTriple', ...existingBlockTriple },
+      after: {
+        type: 'createTriple',
+        ...Triple.ensureStableId({
+          ...existingBlockTriple,
+          value: { ...existingBlockTriple.value, type: 'string', value: markdown },
+        }),
+      },
     };
   }
 
@@ -216,7 +263,7 @@ export function useBlocksStore({ spaceId }: { spaceId: string }) {
     const blockIds = populatedContent.map(node => getNodeId(node));
 
     // @TODO: How do we do this efficiently?
-    const mockBlockEntities = (await Promise.all(populatedContent.map(node => node))) as {
+    const mockBlockEntities = (await Promise.all(blockIds.map(node => node))) as {
       id: string;
       triples: ITriple[];
     }[];
@@ -227,15 +274,28 @@ export function useBlocksStore({ spaceId }: { spaceId: string }) {
     const actions: (CreateTripleAction | EditTripleAction)[] = [];
 
     for (const node of populatedContent) {
-      // do different things based on the type of block
+      const blockEntity = mockBlockEntities.find(entity => entity.id === getNodeId(node));
+
+      const existingBlockTypeTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.TYPES) ?? null;
+
+      const blockTypeTriple = getBlockTypeTriple({
+        node,
+        existingBlockTypeTriple,
+        spaceId,
+      });
+
+      if (blockTypeTriple) {
+        actions.push(blockTypeTriple);
+      }
+
+      // @TODO:
       // all blocks need the following triples
       // - block type
       // - parent entity? (do we still need parent entities?)
       // - name
 
-      // @TODO: upsert block type triple
       // @TODO: upsert parent entity triple
-      // @TODO: upsert collection id triple
+      // @TODO: upsert name triple
       const blockType = node.type as 'tableNode' | 'image' | 'paragraph' | undefined;
 
       // Build actions for the required triples for each block type.
@@ -246,7 +306,6 @@ export function useBlocksStore({ spaceId }: { spaceId: string }) {
       // Paragraph blocks need a markdown triple.
       switch (blockType) {
         case 'tableNode': {
-          const blockEntity = mockBlockEntities.find(entity => entity.id === getNodeId(node));
           const existingRowTypeTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.ROW_TYPE) ?? null;
           const existingFilterTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.FILTER) ?? null;
 
@@ -306,7 +365,7 @@ export function useBlocksStore({ spaceId }: { spaceId: string }) {
         if (action.type === 'createTriple') {
           create(action);
         } else if (action.type === 'editTriple') {
-          update(action);
+          update(action.after, action.before);
         }
       });
     });

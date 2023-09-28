@@ -5,7 +5,6 @@ import { Editor, JSONContent, generateHTML, generateJSON } from '@tiptap/core';
 import pluralize from 'pluralize';
 import showdown from 'showdown';
 
-import { TableBlockSdk } from '~/core/blocks-sdk';
 import { Environment } from '~/core/environment';
 import { ID } from '~/core/id';
 import { Subgraph } from '~/core/io';
@@ -536,88 +535,6 @@ export class EntityStore {
     }
   };
 
-  /* Helper function for creating a new row type triple for TABLE_BLOCKs only  */
-  createTableBlockMetadata = (node: JSONContent) => {
-    const blockEntityId = getNodeId(node);
-    const isTableNode = node.type === 'tableNode';
-    const rowTypeEntityId = node.attrs?.typeId;
-    const rowTypeEntityName = node.attrs?.typeName;
-
-    if (!isTableNode) {
-      return null;
-    }
-
-    const existingRowTypeTriple = this.getBlockTriple({ entityId: blockEntityId, attributeId: SYSTEM_IDS.ROW_TYPE });
-
-    if (!existingRowTypeTriple) {
-      this.create(
-        Triple.withId({
-          space: this.spaceId,
-          entityId: blockEntityId,
-          entityName: this.nodeName(node),
-          attributeId: SYSTEM_IDS.ROW_TYPE,
-          attributeName: 'Row Type',
-          value: { id: rowTypeEntityId, type: 'entity', name: rowTypeEntityName },
-        })
-      );
-
-      // Make sure that we only add it for new tables by also checking that the row type triple doesn't exist.
-      // Typically the row type triple only gets added when the table is created. Otherwise this will create
-      // a new filter for every table block that doesn't have one every time the content of the editor is changed.
-      // Generally the filter triple _also_ won't exist if the row type doesn't, but we check to be safe.
-      const existingFilterTriple = this.getBlockTriple({ entityId: blockEntityId, attributeId: SYSTEM_IDS.FILTER });
-
-      if (!existingFilterTriple) {
-        this.create(
-          Triple.withId({
-            space: this.spaceId,
-            entityId: blockEntityId,
-            entityName: this.nodeName(node),
-            attributeId: SYSTEM_IDS.FILTER,
-            attributeName: 'Filter',
-            value: {
-              id: ID.createValueId(),
-              type: 'string',
-              value: TableBlockSdk.createGraphQLStringFromFilters(
-                [
-                  {
-                    columnId: SYSTEM_IDS.SPACE,
-                    valueType: 'string',
-                    value: this.spaceId,
-                  },
-                ],
-                rowTypeEntityId
-              ),
-            },
-          })
-        );
-      }
-    }
-  };
-
-  /* Helper function for creating a new block image triple for IMAGE_BLOCKs only  */
-  createBlockImageTriple = (node: JSONContent) => {
-    const blockEntityId = getNodeId(node);
-    const isImageNode = node.type === 'image';
-
-    if (!isImageNode || !node.attrs?.src) {
-      return null;
-    }
-
-    const { src } = node.attrs;
-
-    this.create(
-      Triple.withId({
-        space: this.spaceId,
-        entityId: blockEntityId,
-        entityName: this.nodeName(node),
-        attributeId: SYSTEM_IDS.IMAGE_ATTRIBUTE,
-        attributeName: 'Image',
-        value: { id: ID.createValueId(), type: 'image', value: Value.toImageValue(src) },
-      })
-    );
-  };
-
   /*
   Helper function to create or update the block IDs on an entity
   Since we don't currently support array value types, we store all ordered blocks as a single stringified array
@@ -718,11 +635,8 @@ export class EntityStore {
 
       populatedContent.forEach(node => {
         this.createParentEntityTriple(node);
-        this.createTableBlockMetadata(node);
         this.createBlockTypeTriple(node);
         this.upsertBlockNameTriple(node);
-        this.upsertBlockMarkdownTriple(node);
-        this.createBlockImageTriple(node);
       });
     });
   };
