@@ -21,7 +21,6 @@ import { tiptapExtensions } from '~/partials/editor/editor';
 import { htmlToPlainText } from '~/partials/editor/editor-utils';
 
 import { ActionsStore } from '../actions-store';
-import { LocalStore } from '../local-store';
 
 const markdownConverter = new showdown.Converter();
 
