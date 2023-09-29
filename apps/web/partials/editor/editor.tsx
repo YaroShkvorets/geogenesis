@@ -13,6 +13,7 @@ import * as React from 'react';
 
 import { useEntityPageStore } from '~/core/hooks/use-entity-page-store';
 import { useHydrated } from '~/core/hooks/use-hydrated';
+import { useBlocksStore } from '~/core/state/blocks-store/blocks-store';
 
 import { SquareButton } from '~/design-system/button';
 import { Spacer } from '~/design-system/spacer';
@@ -75,7 +76,12 @@ export const Editor = React.memo(function Editor({
   shouldHandleOwnSpacing,
   editable = true,
 }: Props) {
-  const { editorJson, spaceId, updateEditorBlocks, blockIds } = useEntityPageStore();
+  const { editorJson, spaceId, updateEditorBlocks, blockIds, id, name } = useEntityPageStore();
+  const { updateEditorBlocks: updateEditorBlocksNew } = useBlocksStore({
+    spaceId,
+    entityId: id,
+    entityName: name,
+  });
 
   const editor = useEditor({
     extensions: [...tiptapExtensions, createIdExtension(spaceId)],
@@ -85,6 +91,9 @@ export const Editor = React.memo(function Editor({
       // Responsible for converting all editor blocks to triples
       // Fires after the IdExtension's onBlur event which sets the "id" attribute on all nodes
       updateEditorBlocks(editor);
+
+      // THIS MIGHT BE STALE IF IT RELIES ON CHANGING DATA
+      updateEditorBlocksNew(editor);
     },
     editorProps: {
       transformPastedHTML: html => removeIdAttributes(html),

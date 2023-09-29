@@ -20,6 +20,7 @@ export function useEntityPageStore() {
     hiddenSchemaIds$,
     id,
     updateEditorBlocks,
+    name$,
     editorJson$,
   } = useEntityStoreInstance();
   const triples = useSelector(triples$);
@@ -27,6 +28,7 @@ export function useEntityPageStore() {
   const hiddenSchemaIds = useSelector<string[]>(hiddenSchemaIds$);
   const blockIds = useSelector<string[]>(blockIds$);
   const editorJson = useSelector(editorJson$);
+  const name = useSelector(name$);
   const attributeRelationTypes = useConfiguredAttributeRelationTypes({ entityId: id });
 
   return {
@@ -42,6 +44,7 @@ export function useEntityPageStore() {
     editorJson,
     blockIds,
     id,
+    name,
     attributeRelationTypes,
   };
 }

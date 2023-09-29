@@ -1,5 +1,6 @@
 import { SYSTEM_IDS } from '@geogenesis/ids';
 import { batch } from '@legendapp/state';
+import { useQueryClient } from '@tanstack/react-query';
 import { Editor, JSONContent, generateHTML } from '@tiptap/core';
 import pluralize from 'pluralize';
 import showdown from 'showdown';
@@ -8,8 +9,11 @@ import * as React from 'react';
 
 import { TableBlockSdk } from '~/core/blocks-sdk';
 import { useActionsStore } from '~/core/hooks/use-actions-store';
+import { useMergedData } from '~/core/hooks/use-merged-data';
 import { ID } from '~/core/id';
+import { Services } from '~/core/services';
 import { CreateTripleAction, EditTripleAction, EntityValue, Triple as ITriple } from '~/core/types';
+import { Entity } from '~/core/utils/entity';
 import { Triple } from '~/core/utils/triple';
 import { Value } from '~/core/utils/value';
 
@@ -289,14 +293,17 @@ function getParentEntityTriple({
   const blockEntityId = getNodeId(node);
 
   if (!existingParentEntityTriple) {
-    Triple.withId({
-      space: spaceId,
-      entityId: blockEntityId,
-      entityName: getNodeName(node),
-      attributeId: SYSTEM_IDS.PARENT_ENTITY,
-      attributeName: 'Parent Entity',
-      value: { id: entityPageId, type: 'entity', name: entityPageName },
-    });
+    return {
+      type: 'createTriple',
+      ...Triple.withId({
+        space: spaceId,
+        entityId: blockEntityId,
+        entityName: getNodeName(node),
+        attributeId: SYSTEM_IDS.PARENT_ENTITY,
+        attributeName: 'Parent Entity',
+        value: { id: entityPageId, type: 'entity', name: entityPageName },
+      }),
+    };
   }
 
   return null;
@@ -320,7 +327,6 @@ function getParentEntityTriple({
  * 5. Keep fetched blocks in sync when editor changes
  * 6. Set ordering on join block(s) when editor changes
  */
-
 export function useBlocksStore({
   spaceId,
   entityId,
@@ -331,6 +337,9 @@ export function useBlocksStore({
   entityName: string | null;
 }) {
   const { create, update } = useActionsStore();
+  const { config } = Services.useServices();
+  const queryClient = useQueryClient();
+  const merged = useMergedData();
 
   const updateEditorBlocks = React.useCallback(
     async (editor: Editor) => {
@@ -358,10 +367,12 @@ export function useBlocksStore({
 
       // @TODO: How do we do this efficiently?
       // get all block entities by id
-      const mockContentBlockEntities = (await Promise.all(blockIds.map(node => node))) as {
-        id: string;
-        triples: ITriple[];
-      }[];
+      const maybeContentBlockEntities = await queryClient.fetchQuery({
+        queryKey: ['block-entities', blockIds],
+        queryFn: () => Promise.all(blockIds.map(id => merged.fetchEntity({ id, endpoint: config.subgraph }))),
+      });
+
+      const contentBlockEntities = maybeContentBlockEntities.filter(Entity.isNonNull);
 
       // get all join blocks by id
       const mockJoinBlockEntities = (await Promise.all(blockIds.map(node => node))) as {
@@ -381,7 +392,7 @@ export function useBlocksStore({
       // Image blocks need an image url triple.
       // Paragraph blocks need a markdown triple.
       for (const node of populatedContent) {
-        const blockEntity = mockContentBlockEntities.find(entity => entity.id === getNodeId(node));
+        const blockEntity = contentBlockEntities.find(entity => entity.id === getNodeId(node));
 
         // Create a block type triple for this block entity if it doesn't exist.
         const existingBlockTypeTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.TYPES) ?? null;
@@ -407,6 +418,7 @@ export function useBlocksStore({
           actions.push(blockNameTriple);
         }
 
+
         // Create a parent entity triple for this block entity if it doesn't exist.
         const existingParentEntityTriple =
           blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.PARENT_ENTITY) ?? null;
@@ -417,6 +429,7 @@ export function useBlocksStore({
           entityPageId: entityId,
           entityPageName: entityName,
         });
+
 
         if (parentEntityTriple) {
           actions.push(parentEntityTriple);
@@ -492,7 +505,7 @@ export function useBlocksStore({
         });
       });
     },
-    [create, update, spaceId, entityId, entityName]
+    [create, update, spaceId, entityId, entityName, merged, queryClient, config]
   );
 
   // for each block id we need to update the content block
