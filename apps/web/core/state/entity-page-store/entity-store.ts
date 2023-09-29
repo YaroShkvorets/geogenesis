@@ -8,7 +8,7 @@ import showdown from 'showdown';
 import { Environment } from '~/core/environment';
 import { ID } from '~/core/id';
 import { Subgraph } from '~/core/io';
-import { EntityValue, Triple as ITriple } from '~/core/types';
+import { Triple as ITriple } from '~/core/types';
 import { Action } from '~/core/utils/action';
 import { Entity } from '~/core/utils/entity';
 import { Triple } from '~/core/utils/triple';
@@ -455,26 +455,6 @@ export class EntityStore {
     }
   };
 
-  /* Helper function for creating backlinks to the parent entity  */
-  createParentEntityTriple = (node: JSONContent) => {
-    const blockEntityId = getNodeId(node);
-
-    const existingBlockTriple = this.getBlockTriple({ entityId: blockEntityId, attributeId: SYSTEM_IDS.PARENT_ENTITY });
-
-    if (!existingBlockTriple) {
-      this.create(
-        Triple.withId({
-          space: this.spaceId,
-          entityId: blockEntityId,
-          entityName: this.nodeName(node),
-          attributeId: SYSTEM_IDS.PARENT_ENTITY,
-          attributeName: 'Parent Entity',
-          value: { id: this.id, type: 'entity', name: this.name$.get() },
-        })
-      );
-    }
-  };
-
   /*
   Helper function to create or update the block IDs on an entity
   Since we don't currently support array value types, we store all ordered blocks as a single stringified array
@@ -572,10 +552,6 @@ export class EntityStore {
 
     batch(() => {
       this.upsertBlocksTriple(blockIds);
-
-      populatedContent.forEach(node => {
-        this.createParentEntityTriple(node);
-      });
     });
   };
 }

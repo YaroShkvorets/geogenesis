@@ -273,6 +273,35 @@ function upsertBlockNameTriple({
   return null;
 }
 
+function getParentEntityTriple({
+  node,
+  existingParentEntityTriple,
+  spaceId,
+  entityPageId,
+  entityPageName,
+}: {
+  node: JSONContent;
+  existingParentEntityTriple: ITriple | null;
+  spaceId: string;
+  entityPageId: string;
+  entityPageName: string | null;
+}): CreateTripleAction | null {
+  const blockEntityId = getNodeId(node);
+
+  if (!existingParentEntityTriple) {
+    Triple.withId({
+      space: spaceId,
+      entityId: blockEntityId,
+      entityName: getNodeName(node),
+      attributeId: SYSTEM_IDS.PARENT_ENTITY,
+      attributeName: 'Parent Entity',
+      value: { id: entityPageId, type: 'entity', name: entityPageName },
+    });
+  }
+
+  return null;
+}
+
 /**
  * Blocks store has a few jobs
  * 1. Get all the blocks for a given entity
@@ -286,14 +315,21 @@ function upsertBlockNameTriple({
  * 5. Keep block ordering in sync when the editor changes (Join Blocks)
  *
  * @TODO
- * 2. Set parent entity triple on all blocks
  * 3. Fetch all blocks
  * 4. Fetch all join blocks
  * 5. Keep fetched blocks in sync when editor changes
  * 6. Set ordering on join block(s) when editor changes
  */
 
-export function useBlocksStore({ spaceId }: { spaceId: string }) {
+export function useBlocksStore({
+  spaceId,
+  entityId,
+  entityName,
+}: {
+  spaceId: string;
+  entityId: string;
+  entityName: string | null;
+}) {
   const { create, update } = useActionsStore();
 
   const updateEditorBlocks = React.useCallback(
@@ -371,6 +407,21 @@ export function useBlocksStore({ spaceId }: { spaceId: string }) {
           actions.push(blockNameTriple);
         }
 
+        // Create a parent entity triple for this block entity if it doesn't exist.
+        const existingParentEntityTriple =
+          blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.PARENT_ENTITY) ?? null;
+        const parentEntityTriple = getParentEntityTriple({
+          node,
+          existingParentEntityTriple,
+          spaceId,
+          entityPageId: entityId,
+          entityPageName: entityName,
+        });
+
+        if (parentEntityTriple) {
+          actions.push(parentEntityTriple);
+        }
+
         // Build required actions based on the block type.
         const blockType = node.type as 'tableNode' | 'image' | 'paragraph' | undefined;
 
@@ -398,7 +449,7 @@ export function useBlocksStore({ spaceId }: { spaceId: string }) {
           }
 
           case 'image': {
-            // We can't update an image block once it's been created, so we don't need
+            // There's no UI to update an image block once it's been created, so we don't need
             // to check if there's an existing image triple or not.
             const imageTriple = getNewBlockImageTriple({
               node,
@@ -441,7 +492,7 @@ export function useBlocksStore({ spaceId }: { spaceId: string }) {
         });
       });
     },
-    [create, update, spaceId]
+    [create, update, spaceId, entityId, entityName]
   );
 
   // for each block id we need to update the content block
