@@ -399,66 +399,6 @@ export class EntityStore {
     return htmlToPlainText(nodeHTML).slice(0, nodeNameLength);
   };
 
-  /*
-  Helper function for creating a new block of type TABLE_BLOCK, TEXT_BLOCK, or IMAGE_BLOCK
-  We don't support changing types of blocks, so all we need to do is create a new block with the new type
-  */
-  createBlockTypeTriple = (node: JSONContent) => {
-    const blockEntityId = getNodeId(node);
-    const entityName = this.nodeName(node);
-
-    const blockTypeValue: EntityValue = getBlockTypeValue(node.type);
-
-    const existingBlockTriple = this.getBlockTriple({ entityId: blockEntityId, attributeId: SYSTEM_IDS.TYPES });
-
-    if (!existingBlockTriple) {
-      this.create(
-        Triple.withId({
-          space: this.spaceId,
-          entityId: blockEntityId,
-          entityName: entityName,
-          attributeId: SYSTEM_IDS.TYPES,
-          attributeName: 'Types',
-          value: blockTypeValue,
-        })
-      );
-    }
-  };
-
-  /*
-  Helper function for upserting a new block name triple for TABLE_BLOCK, TEXT_BLOCK, or IMAGE_BLOCK
-  */
-  upsertBlockNameTriple = (node: JSONContent) => {
-    const blockEntityId = getNodeId(node);
-    const entityName = this.nodeName(node);
-
-    const existingBlockTriple = this.getBlockTriple({ entityId: blockEntityId, attributeId: SYSTEM_IDS.NAME });
-    const isUpdated = existingBlockTriple && Value.stringValue(existingBlockTriple) !== entityName;
-    const isTableNode = node.type === 'tableNode';
-
-    if (!existingBlockTriple) {
-      this.create(
-        Triple.withId({
-          space: this.spaceId,
-          entityId: blockEntityId,
-          entityName: entityName,
-          attributeId: SYSTEM_IDS.NAME,
-          attributeName: 'Name',
-          value: { id: ID.createValueId(), type: 'string', value: entityName },
-        })
-      );
-    } else if (!isTableNode && isUpdated) {
-      this.update(
-        Triple.ensureStableId({
-          ...existingBlockTriple,
-          entityName,
-          value: { ...existingBlockTriple.value, type: 'string', value: entityName },
-        }),
-        existingBlockTriple
-      );
-    }
-  };
-
   /* Helper function for upserting a new block markdown content triple for TEXT_BLOCKs only  */
   upsertBlockMarkdownTriple = (node: JSONContent) => {
     const blockEntityId = getNodeId(node);
@@ -635,8 +575,6 @@ export class EntityStore {
 
       populatedContent.forEach(node => {
         this.createParentEntityTriple(node);
-        this.createBlockTypeTriple(node);
-        this.upsertBlockNameTriple(node);
       });
     });
   };
@@ -644,16 +582,3 @@ export class EntityStore {
 
 // Returns the id of the first paragraph even if nested inside of a list
 const getNodeId = (node: JSONContent) => node.attrs?.id ?? node?.content?.[0]?.content?.[0]?.attrs?.id;
-
-const getBlockTypeValue = (nodeType?: string): EntityValue => {
-  switch (nodeType) {
-    case 'paragraph':
-      return { id: SYSTEM_IDS.TEXT_BLOCK, type: 'entity', name: 'Text Block' };
-    case 'image':
-      return { id: SYSTEM_IDS.IMAGE_BLOCK, type: 'entity', name: 'Image Block' };
-    case 'tableNode':
-      return { id: SYSTEM_IDS.TABLE_BLOCK, type: 'entity', name: 'Table Block' };
-    default:
-      return { id: SYSTEM_IDS.TEXT_BLOCK, type: 'entity', name: 'Text Block' };
-  }
-};

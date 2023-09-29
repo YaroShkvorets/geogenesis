@@ -4,6 +4,8 @@ import { Editor, JSONContent, generateHTML } from '@tiptap/core';
 import pluralize from 'pluralize';
 import showdown from 'showdown';
 
+import * as React from 'react';
+
 import { TableBlockSdk } from '~/core/blocks-sdk';
 import { useActionsStore } from '~/core/hooks/use-actions-store';
 import { ID } from '~/core/id';
@@ -112,7 +114,7 @@ function getNewTableBlockMetadataTriples({
       value: { id: rowTypeEntityId, type: 'entity', name: rowTypeEntityName },
     });
 
-    // Make sure that we only add it for new tables by also checking that the row type triple doesn't exist.
+    // Make sure that we only add a filter for new tables by also checking that the row type triple doesn't exist.
     // Typically the row type triple only gets added when the table is created. Otherwise this will create
     // a new filter for every table block that doesn't have one every time the content of the editor is changed.
     // Generally the filter triple _also_ won't exist if the row type doesn't, but we check to be safe.
@@ -223,6 +225,54 @@ function upsertBlockMarkdownTriple({
   return null;
 }
 
+/*
+  Helper function for upserting a new block name triple for TABLE_BLOCK, TEXT_BLOCK, or IMAGE_BLOCK
+  */
+function upsertBlockNameTriple({
+  node,
+  spaceId,
+  existingNameTriple,
+}: {
+  node: JSONContent;
+  spaceId: string;
+  existingNameTriple: ITriple | null;
+}): CreateTripleAction | EditTripleAction | null {
+  const blockEntityId = getNodeId(node);
+  const entityName = getNodeName(node);
+
+  const isUpdated = existingNameTriple && Value.stringValue(existingNameTriple) !== entityName;
+  const isTableNode = node.type === 'tableNode';
+
+  if (!existingNameTriple) {
+    return {
+      type: 'createTriple',
+      ...Triple.withId({
+        space: spaceId,
+        entityId: blockEntityId,
+        entityName: entityName,
+        attributeId: SYSTEM_IDS.NAME,
+        attributeName: 'Name',
+        value: { id: ID.createValueId(), type: 'string', value: entityName },
+      }),
+    };
+  } else if (!isTableNode && isUpdated) {
+    return {
+      type: 'editTriple',
+      before: { type: 'deleteTriple', ...existingNameTriple },
+      after: {
+        type: 'createTriple',
+        ...Triple.ensureStableId({
+          ...existingNameTriple,
+          entityName,
+          value: { ...existingNameTriple.value, type: 'string', value: entityName },
+        }),
+      },
+    };
+  }
+
+  return null;
+}
+
 /**
  * Blocks store has a few jobs
  * 1. Get all the blocks for a given entity
@@ -234,142 +284,165 @@ function upsertBlockMarkdownTriple({
  * 3. Create new join blocks when the editor has new blocks
  * 4. Keep block content in sync when the editor changes (Content Blocks)
  * 5. Keep block ordering in sync when the editor changes (Join Blocks)
+ *
+ * @TODO
+ * 2. Set parent entity triple on all blocks
+ * 3. Fetch all blocks
+ * 4. Fetch all join blocks
+ * 5. Keep fetched blocks in sync when editor changes
+ * 6. Set ordering on join block(s) when editor changes
  */
 
 export function useBlocksStore({ spaceId }: { spaceId: string }) {
   const { create, update } = useActionsStore();
-  // get content from editor JSON
-  // get all block content from blocks with actual data
-  // get all the block ids
-  // for each block, update the content
-  // for each block, check the previous position in the list and make sure
-  //   all Join Blocks' order is correct
 
-  const updateEditorBlocks = async (editor: Editor) => {
-    const { content = [] } = editor.getJSON();
+  const updateEditorBlocks = React.useCallback(
+    async (editor: Editor) => {
+      const { content = [] } = editor.getJSON();
 
-    const populatedContent = content.filter(node => {
-      const isNonParagraph = node.type !== 'paragraph';
-      const isParagraphWithContent =
-        node.type === 'paragraph' &&
-        node.content &&
-        node.content.length > 0 &&
-        node.content[0].text &&
-        !node.content[0].text.startsWith('/'); // Do not create a block if the text node starts with a slash command
+      // Don't make block entities for empty paragraphs.
+      const populatedContent = content.filter(node => {
+        const isNonParagraph = node.type !== 'paragraph';
 
-      return isNonParagraph || isParagraphWithContent;
-    });
+        if (isNonParagraph) {
+          return true;
+        }
 
-    const blockIds = populatedContent.map(node => getNodeId(node));
+        const isParagraphWithValidContent =
+          node.content &&
+          node.content.length > 0 &&
+          node.content[0].text &&
+          // Don't create a block if the text node starts with a slash command
+          !node.content[0].text.startsWith('/');
 
-    // @TODO: How do we do this efficiently?
-    const mockBlockEntities = (await Promise.all(blockIds.map(node => node))) as {
-      id: string;
-      triples: ITriple[];
-    }[];
-
-    // get all block entities by id
-    // get all join blocks by id
-
-    const actions: (CreateTripleAction | EditTripleAction)[] = [];
-
-    for (const node of populatedContent) {
-      const blockEntity = mockBlockEntities.find(entity => entity.id === getNodeId(node));
-
-      const existingBlockTypeTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.TYPES) ?? null;
-
-      const blockTypeTriple = getBlockTypeTriple({
-        node,
-        existingBlockTypeTriple,
-        spaceId,
+        return isParagraphWithValidContent;
       });
 
-      if (blockTypeTriple) {
-        actions.push(blockTypeTriple);
-      }
+      const blockIds = populatedContent.map(node => getNodeId(node));
 
-      // @TODO:
-      // all blocks need the following triples
-      // - block type
-      // - parent entity? (do we still need parent entities?)
-      // - name
+      // @TODO: How do we do this efficiently?
+      // get all block entities by id
+      const mockContentBlockEntities = (await Promise.all(blockIds.map(node => node))) as {
+        id: string;
+        triples: ITriple[];
+      }[];
 
-      // @TODO: upsert parent entity triple
-      // @TODO: upsert name triple
-      const blockType = node.type as 'tableNode' | 'image' | 'paragraph' | undefined;
+      // get all join blocks by id
+      const mockJoinBlockEntities = (await Promise.all(blockIds.map(node => node))) as {
+        id: string;
+        entityPointer: string;
+      }[];
 
-      // Build actions for the required triples for each block type.
-      // Later on we execute these actions using the APIs from the ActionsStore (create, update, remove).
+      const actions: (CreateTripleAction | EditTripleAction)[] = [];
+
+      // Build the actions to perform for each block in the editor.
+      // Later on we execute these actions using the APIs from the
+      // ActionsStore (create, update, remove).
       //
-      // Table blocks need a row type and filter triple.
+      // Each block requires a name, type, and parent entity.
+      //
+      // Table blocks need row type and filter triples.
       // Image blocks need an image url triple.
       // Paragraph blocks need a markdown triple.
-      switch (blockType) {
-        case 'tableNode': {
-          const existingRowTypeTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.ROW_TYPE) ?? null;
-          const existingFilterTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.FILTER) ?? null;
+      for (const node of populatedContent) {
+        const blockEntity = mockContentBlockEntities.find(entity => entity.id === getNodeId(node));
 
-          const { rowTypeTriple, filterTriple } = getNewTableBlockMetadataTriples({
-            node,
-            spaceId,
-            existingFilterTriple,
-            existingRowTypeTriple,
-          });
+        // Create a block type triple for this block entity if it doesn't exist.
+        const existingBlockTypeTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.TYPES) ?? null;
+        const blockTypeTriple = getBlockTypeTriple({
+          node,
+          existingBlockTypeTriple,
+          spaceId,
+        });
 
-          if (rowTypeTriple) {
-            actions.push(rowTypeTriple);
-          }
-
-          if (filterTriple) {
-            actions.push(filterTriple);
-          }
-
-          break;
-        }
-        case 'image': {
-          // We can't update an image block once it's been created, so we don't need
-          // to check if there's an existing image triple or not.
-          const imageTriple = getNewBlockImageTriple({
-            node,
-            spaceId,
-          });
-
-          if (imageTriple) {
-            actions.push(imageTriple);
-          }
-
-          break;
+        if (blockTypeTriple) {
+          actions.push(blockTypeTriple);
         }
 
-        case 'paragraph': {
-          const result = upsertBlockMarkdownTriple({
-            node,
-            spaceId,
-            existingBlockTriple: null,
-          });
+        // Create a block name triple for this block entity if it doesn't exist.
+        const existingNameTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.NAME) ?? null;
+        const blockNameTriple = upsertBlockNameTriple({
+          node,
+          existingNameTriple,
+          spaceId,
+        });
 
-          if (result) {
-            actions.push(result);
-          }
-
-          break;
+        if (blockNameTriple) {
+          actions.push(blockNameTriple);
         }
 
-        default:
-          break;
+        // Build required actions based on the block type.
+        const blockType = node.type as 'tableNode' | 'image' | 'paragraph' | undefined;
+
+        switch (blockType) {
+          case 'tableNode': {
+            const existingRowTypeTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.ROW_TYPE) ?? null;
+            const existingFilterTriple = blockEntity?.triples.find(t => t.attributeId === SYSTEM_IDS.FILTER) ?? null;
+
+            const { rowTypeTriple, filterTriple } = getNewTableBlockMetadataTriples({
+              node,
+              spaceId,
+              existingFilterTriple,
+              existingRowTypeTriple,
+            });
+
+            if (rowTypeTriple) {
+              actions.push(rowTypeTriple);
+            }
+
+            if (filterTriple) {
+              actions.push(filterTriple);
+            }
+
+            break;
+          }
+
+          case 'image': {
+            // We can't update an image block once it's been created, so we don't need
+            // to check if there's an existing image triple or not.
+            const imageTriple = getNewBlockImageTriple({
+              node,
+              spaceId,
+            });
+
+            if (imageTriple) {
+              actions.push(imageTriple);
+            }
+
+            break;
+          }
+
+          case 'paragraph': {
+            const result = upsertBlockMarkdownTriple({
+              node,
+              spaceId,
+              existingBlockTriple: null,
+            });
+
+            if (result) {
+              actions.push(result);
+            }
+
+            break;
+          }
+
+          default:
+            break;
+        }
       }
-    }
 
-    batch(() => {
-      actions.forEach(action => {
-        if (action.type === 'createTriple') {
-          create(action);
-        } else if (action.type === 'editTriple') {
-          update(action.after, action.before);
-        }
+      batch(() => {
+        actions.forEach(action => {
+          if (action.type === 'createTriple') {
+            create(action);
+          } else if (action.type === 'editTriple') {
+            update(action.after, action.before);
+          }
+        });
       });
-    });
-  };
+    },
+    [create, update, spaceId]
+  );
 
   // for each block id we need to update the content block
   // we need to check the ordering of blocks and update the join blocks
