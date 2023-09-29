@@ -108,8 +108,7 @@ const ReviewChanges = () => {
   const [unstagedChanges, setUnstagedChanges] = useState<Record<string, Record<string, boolean>>>({});
   const { actionsFromSpace, clear } = useActionsStore(activeSpace);
   const { makeProposal } = usePublish();
-  const actions = Action.unpublishedChanges(actionsFromSpace);
-  const [data, isLoading] = useChanges(actions, activeSpace);
+  const [data, isLoading] = useChanges(actionsFromSpace, activeSpace);
 
   // Publishing logic
   const { data: wallet } = useWalletClient();
