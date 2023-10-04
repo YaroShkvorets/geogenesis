@@ -10,6 +10,7 @@ import { AppConfig } from '~/core/environment';
 import { Subgraph } from '~/core/io';
 import { Params } from '~/core/params';
 import { EntityStoreProvider } from '~/core/state/entity-page-store';
+import { MergeEntityProvider } from '~/core/state/merge-entity-store';
 import { MoveEntityProvider } from '~/core/state/move-entity-store';
 import { DEFAULT_PAGE_SIZE } from '~/core/state/triple-store';
 import { TypesStoreServerContainer } from '~/core/state/types-store/types-store-server-container';
@@ -30,6 +31,7 @@ import {
   EntityReferencedByServerContainer,
 } from '~/partials/entity-page/entity-page-referenced-by-server-container';
 import { ToggleEntityPage } from '~/partials/entity-page/toggle-entity-page';
+import { MergeEntityReview } from '~/partials/merge-entity/merge-entity-review';
 import { MoveEntityReview } from '~/partials/move-entity/move-entity-review';
 
 interface Props {
@@ -101,19 +103,22 @@ export default async function DefaultEntityPage({ params, searchParams }: Props)
         initialBlockTriples={props.blockTriples}
       >
         <MoveEntityProvider>
-          <EntityPageCover avatarUrl={avatarUrl} coverUrl={coverUrl} />
-          <EntityPageContentContainer>
-            <EditableHeading spaceId={props.spaceId} entityId={props.id} name={props.name} triples={props.triples} />
-            <EntityPageMetadataHeader id={props.id} spaceId={props.spaceId} types={types} />
-            <Spacer height={40} />
-            <Editor shouldHandleOwnSpacing />
-            <ToggleEntityPage {...props} filterId={filterId} filterValue={filterValue} typeId={typeId} />
-            <Spacer height={40} />
-            <Suspense fallback={<EntityReferencedByLoading />}>
-              {/* @ts-expect-error async JSX function */}
-              <EntityReferencedByServerContainer entityId={props.id} name={props.name} searchParams={searchParams} />
-            </Suspense>
-          </EntityPageContentContainer>
+          <MergeEntityProvider>
+            <EntityPageCover avatarUrl={avatarUrl} coverUrl={coverUrl} />
+            <EntityPageContentContainer>
+              <EditableHeading spaceId={props.spaceId} entityId={props.id} name={props.name} triples={props.triples} />
+              <EntityPageMetadataHeader id={props.id} spaceId={props.spaceId} types={types} />
+              <Spacer height={40} />
+              <Editor shouldHandleOwnSpacing />
+              <ToggleEntityPage {...props} filterId={filterId} filterValue={filterValue} typeId={typeId} />
+              <Spacer height={40} />
+              <Suspense fallback={<EntityReferencedByLoading />}>
+                {/* @ts-expect-error async JSX function */}
+                <EntityReferencedByServerContainer entityId={props.id} name={props.name} searchParams={searchParams} />
+              </Suspense>
+            </EntityPageContentContainer>
+            <MergeEntityReview />
+          </MergeEntityProvider>
           <MoveEntityReview />
         </MoveEntityProvider>
       </EntityStoreProvider>
